@@ -2,15 +2,18 @@ import React, { useState, useEffect } from "react"
 import { Container, Col, Form, Button, Card, Row } from "react-bootstrap"
 
 import Auth from "../utils/auth"
-import { saveBook, searchGoogleBooks } from "../utils/API"
+import { searchGoogleBooks } from "../utils/API"
 import { saveBookIds, getSavedBookIds } from "../utils/localStorage"
+import { useMutation } from "@apollo/client"
+import { SAVE_BOOK } from "../utils/mutations"
 
 const SearchBooks = () => {
     // create state for holding returned google api data
     const [searchedBooks, setSearchedBooks] = useState([])
     // create state for holding our search field data
     const [searchInput, setSearchInput] = useState("")
-
+    // eslint-disable-next-line no-unused-vars
+    const [saveBook, { error, data }] = useMutation(SAVE_BOOK)
     // create state to hold saved bookId values
     const [savedBookIds, setSavedBookIds] = useState(getSavedBookIds())
 
@@ -56,7 +59,6 @@ const SearchBooks = () => {
     const handleSaveBook = async (bookId) => {
         // find the book in `searchedBooks` state by the matching id
         const bookToSave = searchedBooks.find((book) => book.bookId === bookId)
-
         // get token
         const token = Auth.loggedIn() ? Auth.getToken() : null
 
@@ -65,9 +67,11 @@ const SearchBooks = () => {
         }
 
         try {
-            const response = await saveBook(bookToSave, token)
+            const { data } = await saveBook({
+                variables: { book: { ...bookToSave } },
+            })
 
-            if (!response.ok) {
+            if (!data) {
                 throw new Error("something went wrong!")
             }
 
@@ -116,7 +120,7 @@ const SearchBooks = () => {
                         ? `Viewing ${searchedBooks.length} results:`
                         : "Search for a book to begin"}
                 </h2>
-                <Row xs={1} md={2} lg={5} className="g-4">
+                <Row xs={1} md={2} lg={4} className="g-4">
                     {searchedBooks.map((book) => {
                         return (
                             <Card key={book.bookId} border="dark">
